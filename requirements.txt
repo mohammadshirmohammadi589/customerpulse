@@ -1,0 +1,9 @@
+pandas
+numpy
+duckdb
+PyYAML
+jupyter
+ipykernel
+streamlit
+pytest
+matplotlib

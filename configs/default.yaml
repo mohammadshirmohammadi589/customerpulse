@@ -1,0 +1,22 @@
+source:
+  type: single_file
+  path: data/raw/OnlineRetail.csv
+  encoding: latin1
+
+mapping:
+  customer_id: CustomerID
+  transaction_id: InvoiceNo
+  transaction_date: InvoiceDate
+  product_id: StockCode
+  product_name: Description
+
+amount:
+  quantity_column: Quantity
+  unit_price_column: UnitPrice
+
+qualification:
+  exclude_transaction_id_prefixes:
+    - "C"
+
+database:
+  path: data/processed/customerpulse.duckdb
