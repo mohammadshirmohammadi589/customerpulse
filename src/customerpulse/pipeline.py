@@ -1,7 +1,7 @@
 """End-to-end orchestration pipeline for CustomerPulse."""
 
 from pathlib import Path
-
+from pathlib import Path
 import duckdb
 
 from customerpulse.analytics.customer_metrics import (
@@ -68,6 +68,10 @@ def _execute_sql_file(
     )
 
     connection.execute(sql)
+
+def _project_root() -> Path:
+    """Return the CustomerPulse project root."""
+    return Path(__file__).resolve().parents[2]
 
 
 def run_pipeline(
@@ -239,9 +243,11 @@ def run_pipeline(
         "sql/analytics/cohort_periods.sql",
     )
 
+    project_root = _project_root()
+
     _execute_sql_file(
         connection,
-        "sql/analytics/cohort_retention.sql",
+        project_root / "sql/analytics/cohort_retention.sql",
     )
 
     build_retention_matrix(

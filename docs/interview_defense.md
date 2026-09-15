@@ -1,212 +1,338 @@
-# CustomerPulse Interview Defense
+# CustomerPulse — Interview Defense
 
 ## 1. Business Problem
 
-CustomerPulse analyzes customer purchasing behavior and translates observed behavior into transparent retention and customer-priority signals.
+CustomerPulse is designed to help a business understand customer behavior and translate behavioral signals into explainable customer priorities.
 
-The goal is to help a business understand customer value, engagement, retention patterns, and which customers deserve attention.
+The main question is:
+
+> Which customers deserve business attention, why, and what action could be considered?
+
+The project intentionally focuses on descriptive and diagnostic customer analytics rather than predictive modeling.
 
 ---
 
-## 2. Why DuckDB?
+## 2. Data Quality
+
+The raw dataset is validated before analytical processing.
+
+The validation framework checks:
+
+- required columns
+- missing customer identifiers
+- missing optional fields
+- invalid dates
+- non-positive amounts
+- duplicate transaction records
+- currency availability
+- identifier quality
+- relationship integrity
+
+Critical data-quality problems can block downstream analysis.
+
+Row-level invalid records may be excluded during qualification when they cannot support reliable customer analytics.
+
+---
+
+## 3. Data Contract
+
+The project uses a canonical analytical schema independent of the source format.
+
+Required fields:
+
+- customer_id
+- transaction_id
+- transaction_date
+- amount
+
+This allows both single-file and two-file inputs to feed the same downstream analytical pipeline.
+
+### Why?
+
+Because analytical logic should not depend on whether the source system provides one CSV or multiple files.
+
+---
+
+## 4. Why DuckDB?
 
 DuckDB was selected because the project is analytical rather than transactional.
 
-It provides a lightweight SQL engine, supports analytical queries efficiently, and keeps the project reproducible without unnecessary infrastructure.
+It provides:
+
+- SQL analytics
+- local execution
+- strong integration with Python and pandas
+- reproducibility
+- simple deployment
+- no external database server for the MVP
+
+A production system could later move to PostgreSQL or another analytical platform if scale and operational requirements justify it.
 
 ---
 
-## 3. Why SQL?
+## 5. Why SQL + Python?
 
-SQL is used for the core analytical transformations because customer metrics, RFM, cohorts, retention, segmentation, and decision rules are naturally expressed as relational operations.
+Python is used for:
 
-Keeping these transformations in SQL also makes the logic auditable and easy to inspect.
+- ingestion
+- validation
+- standardization
+- orchestration
+- configuration
+- testing
+
+SQL is used for:
+
+- customer aggregation
+- RFM
+- cohorts
+- retention
+- historical customer value
+- segmentation
+- decision outputs
+
+This separation keeps transformation logic close to the analytical data model while Python controls the pipeline.
 
 ---
 
-## 4. Why Python?
-
-Python is primarily used for orchestration, ingestion, validation, standardization, configuration, testing, and dashboard integration.
-
-The separation keeps analytical SQL distinct from application logic.
-
----
-
-## 5. Why Transaction-Level Grain?
+## 6. Transaction Grain
 
 The source dataset is line-item based.
 
-Multiple rows can belong to the same invoice, so counting source rows as transactions would overstate transaction counts.
+Multiple rows can belong to the same transaction/invoice.
 
-CustomerPulse therefore aggregates qualified line items into a canonical transaction-level representation before downstream analytics.
+Therefore the canonical analytical grain is transaction-level.
 
----
+The pipeline aggregates line items by transaction_id before calculating downstream customer metrics.
 
-## 6. How Are Invalid Transactions Handled?
-
-Transactions are qualified using explicit rules.
-
-Rows with missing customer IDs, missing transaction IDs, invalid dates, non-positive amounts, or configured cancellation prefixes are excluded from downstream customer analytics.
-
-The raw validation layer still reports data-quality problems rather than silently hiding them.
+This prevents transaction counts from being inflated by multiple product lines within one invoice.
 
 ---
 
-## 7. Why RFM?
+## 7. Customer Metrics
 
-RFM provides an interpretable framework based on:
+Customer-level metrics include:
 
-- Recency
-- Frequency
-- Monetary value
+- transaction_count
+- revenue
+- first_transaction_date
+- last_transaction_date
+- average_transaction_value
+- customer_active_days
 
-It is easy to explain to business stakeholders and provides a strong descriptive segmentation baseline.
-
----
-
-## 8. Why NTILE?
-
-NTILE provides relative scoring across the customer population.
-
-Recency is scored in the opposite direction because lower recency is better, while frequency and monetary value receive higher scores for larger values.
-
-The approach is simple, transparent, and reproducible.
+These metrics summarize observed historical customer behavior.
 
 ---
 
-## 9. Why Not Clustering?
+## 8. RFM
 
-Clustering could be explored later, but the MVP prioritizes interpretability and reproducibility.
+RFM represents:
 
-Rule-based RFM segments allow business stakeholders to understand exactly why a customer belongs to a segment.
+- Recency — how recently the customer purchased
+- Frequency — how often the customer purchased
+- Monetary — how much historical revenue the customer generated
 
----
+The project uses relative quintile scoring.
 
-## 10. What Does Retention Mean?
+Recency is scored so that more recent customers receive higher scores.
 
-Retention represents the percentage of customers from a cohort who remain active in later observed periods.
+Frequency and monetary value receive higher scores when their values are higher.
 
-The CustomerPulse retention analysis uses distinct customer activity by month.
+### Limitation
 
-It is customer retention, not transaction retention.
+Quantile-based scoring is relative to the dataset.
 
----
-
-## 11. Why Are Future Cohort Cells NULL?
-
-A NULL future cohort cell means that the period has not yet been observed for that cohort.
-
-It should not be interpreted as zero retention.
-
-Zero would mean the period was observed and no customers were retained.
+Scores may change when the population or analysis period changes.
 
 ---
 
-## 12. Is Historical Customer Value Predictive CLV?
+## 9. Cohort Retention
 
-No.
+Customers are assigned to a monthly cohort based on their first qualifying transaction.
 
-Historical Customer Value represents observed realized revenue from qualifying historical transactions.
+Retention is measured at the customer level.
 
-It does not predict future customer value.
+A customer is considered active in a month if they have qualifying transaction activity during that month.
 
-Predictive CLV is outside the MVP scope.
+NULL values for future periods mean the period has not been observed.
 
----
-
-## 13. Is HIGH Priority a Churn Probability?
-
-No.
-
-HIGH is a transparent business-priority tier.
-
-In the current framework it primarily identifies High Value At Risk customers.
-
-It is not a probability and should not be interpreted as a churn score.
+They should not automatically be interpreted as zero retention.
 
 ---
 
-## 14. Why Separate Analytics and Decision Layers?
+## 10. Historical Customer Value
 
-The analytical layer produces behavioral signals.
+Historical Customer Value is:
 
-The decision layer translates those signals into business priorities and recommended actions.
+> observed cumulative qualifying revenue generated by the customer.
 
-This separation allows business rules to evolve without changing the underlying analytical metrics.
+It is not predictive Customer Lifetime Value.
 
----
-
-## 15. Are Recommendations Causal?
-
-No.
-
-Recommendations are hypothesis-driven actions based on observed behavioral signals.
-
-The project does not claim that an action will cause a particular business outcome.
-
-Those claims would require controlled experiments or other causal methods.
+The project deliberately avoids calling this metric predictive CLV because the MVP does not contain a future-value prediction model.
 
 ---
 
-## 16. How Is the Pipeline Tested?
+## 11. Segmentation
 
-The project contains unit tests, integration tests, regression tests, and business validation.
+The MVP uses transparent RFM-based business rules instead of clustering.
 
-The pipeline also validates important invariants such as:
+Segments include:
 
-- unique transaction IDs at transaction grain
-- no null customer IDs in standardized transactions
-- positive transaction amounts
+- Champions
+- Loyal Customers
+- High Value At Risk
+- Recent Customers
+- Other
+
+### Why rules instead of clustering?
+
+The main goal of the MVP is explainability and reproducibility.
+
+A business user should be able to understand why a customer belongs to a segment.
+
+Clustering could be explored later if there is a clear business need.
+
+---
+
+## 12. Customer Priority
+
+Customer priority translates analytical signals into business attention tiers.
+
+Current priorities are:
+
+- HIGH
+- MEDIUM
+- LOW
+
+High Value At Risk customers receive HIGH priority.
+
+Champions, Loyal Customers, and Recent Customers receive MEDIUM priority.
+
+Other customers receive LOW priority.
+
+Priority is a business-attention classification.
+
+It is not a churn probability.
+
+---
+
+## 13. Recommendations
+
+Recommendations follow:
+
+> behavioral signal → interpretation → action → rationale
+
+Examples:
+
+- High Value At Risk → win-back and retention outreach
+- Champions → protect relationship and loyalty treatment
+- Loyal Customers → retention and relevant upsell opportunities
+- Recent Customers → onboarding and second-purchase engagement
+
+These recommendations are hypotheses for business action, not causal conclusions.
+
+---
+
+## 14. Dashboard
+
+The Streamlit dashboard provides:
+
+- customer KPIs
+- data-health indicators
+- segment distribution
+- priority filtering
+- priority customer table
+- downloadable customer recommendations
+- cohort retention visualization
+
+The dashboard consumes analytical results from DuckDB rather than reimplementing analytical logic.
+
+---
+
+## 15. Testing Strategy
+
+The project uses unit and integration tests.
+
+Unit tests validate individual components.
+
+Integration tests verify that outputs from one pipeline layer satisfy the expected inputs and assumptions of the next layer.
+
+Business validation additionally checks important analytical invariants.
+
+Examples:
+
+- transaction rows equal distinct transaction IDs after transaction-level aggregation
+- no invalid customer IDs in qualified staging data
+- no non-positive amounts in qualifying transactions
 - valid RFM metrics
-- valid priority values
-- valid HIGH-priority rules
+- valid decision priorities
 
 ---
 
-## 17. Why No Machine Learning?
+## 16. Limitations
 
-The MVP first establishes a reliable analytical foundation.
+The MVP does not include:
 
-Predictive modeling would require additional decisions around target definition, observation windows, temporal feature construction, leakage prevention, train/validation/test splitting, and model evaluation.
+- predictive churn modeling
+- predictive CLV
+- next-purchase prediction
+- causal inference
+- automated campaigns
+- multi-currency conversion
+- real-time processing
 
-These are intentionally deferred to V2.
-
----
-
-## 18. How Would Churn Prediction Be Built in V2?
-
-A future churn model would require:
-
-1. A formal churn definition.
-2. A prediction horizon.
-3. Historical observation windows.
-4. Point-in-time feature construction.
-5. Temporal train/validation/test splits.
-6. Leakage prevention.
-7. Model evaluation.
-8. Threshold selection.
-9. Business validation.
+The priority and recommendation rules are transparent business rules and should not be interpreted as statistically validated treatment effects.
 
 ---
 
-## 19. Main Limitation
+## 17. Future Improvements
 
-The analysis is based on observed historical behavior.
+Potential V2 improvements include:
 
-It does not establish causality and does not predict future customer behavior.
-
-Results also depend on the quality and business meaning of the source transaction data.
+- formal churn definition
+- temporal feature engineering
+- train/validation/test splitting
+- leakage prevention
+- predictive churn modeling
+- predictive CLV
+- model evaluation
+- threshold optimization
+- advanced segmentation
+- production database integration
+- more sophisticated priority rules
 
 ---
 
-## 20. Main Design Principle
+## 18. Common Interview Questions
 
-CustomerPulse prioritizes:
+### Why didn't you build a churn model?
 
-- correctness
-- transparency
-- reproducibility
-- explainability
-- business usefulness
+Because the MVP does not define a formal future churn outcome or temporal prediction framework. Building a predictive model without those foundations could create misleading results.
 
-over unnecessary technical complexity.
+### Why not call Historical Customer Value CLV?
+
+Because it describes observed historical revenue, not predicted future customer value.
+
+### Why is transaction grain important?
+
+Because the raw data contains line items. Counting rows would overstate the number of transactions when one invoice contains multiple products.
+
+### Why use RFM?
+
+RFM is simple, interpretable, and useful for summarizing customer purchasing behavior without requiring a predictive model.
+
+### Why use rules instead of machine learning?
+
+The MVP prioritizes transparency, reproducibility, and business interpretability.
+
+### What does HIGH priority mean?
+
+It means the customer deserves higher business attention according to the defined behavioral rules. It does not mean the customer has a predicted probability of churn.
+
+### What does NULL mean in cohort retention?
+
+It means that future period has not been observed. It is different from observing a period with zero retained customers.
+
+### Why separate analytics from decision logic?
+
+Analytics describes customer behavior. The decision layer translates those signals into business priorities and recommended actions. Keeping them separate makes business rules easier to change without rewriting the analytical layer.

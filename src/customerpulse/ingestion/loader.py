@@ -6,11 +6,16 @@ import pandas as pd
 
 
 def load_csv(path: str | Path) -> pd.DataFrame:
-    """Load a CSV file into a pandas DataFrame without transforming it."""
+    """Load a CSV file without applying transformations."""
 
     file_path = Path(path)
 
     if not file_path.exists():
-        raise FileNotFoundError(f"CSV file not found: {file_path}")
+        raise FileNotFoundError(
+            f"CSV file not found: {file_path}"
+        )
 
-    return pd.read_csv(file_path, encoding="latin1")
+    return pd.read_csv(
+        file_path,
+        encoding="latin1",
+    )
