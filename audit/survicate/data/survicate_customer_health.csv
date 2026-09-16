@@ -1,0 +1,21 @@
+customer_id,previous_month_activity,current_month_activity,engagement_change_pct,nps_score,historical_customer_value,customer_health,priority,priority_reason,recommended_action
+C1019,83,30,-63.86,19,12800,HIGH_RISK_SIGNAL,HIGH,High-value customer with significant engagement decline,Customer Success review and targeted feedback follow-up
+C1002,90,34,-62.22,31,12500,HIGH_RISK_SIGNAL,HIGH,High-value customer with significant engagement decline,Customer Success review and targeted feedback follow-up
+C1016,70,16,-77.14,12,11900,HIGH_RISK_SIGNAL,HIGH,High-value customer with significant engagement decline,Customer Success review and targeted feedback follow-up
+C1007,80,25,-68.75,18,11300,HIGH_RISK_SIGNAL,HIGH,High-value customer with significant engagement decline,Customer Success review and targeted feedback follow-up
+C1013,78,29,-62.82,24,10400,HIGH_RISK_SIGNAL,HIGH,High-value customer with significant engagement decline,Customer Success review and targeted feedback follow-up
+C1004,55,18,-67.27,22,9800,HIGH_RISK_SIGNAL,HIGH,High-value customer with significant engagement decline,Customer Success review and targeted feedback follow-up
+C1009,66,20,-69.7,27,8700,HIGH_RISK_SIGNAL,HIGH,High-value customer with significant engagement decline,Customer Success review and targeted feedback follow-up
+C1006,95,91,-4.21,58,15200,HEALTHY,LOW,Customer engagement is currently stable,Continue normal customer engagement
+C1015,92,86,-6.52,59,14100,HEALTHY,LOW,Customer engagement is currently stable,Continue normal customer engagement
+C1011,88,84,-4.55,63,13400,HEALTHY,LOW,Customer engagement is currently stable,Continue normal customer engagement
+C1001,85,82,-3.53,54,8200,HEALTHY,LOW,Customer engagement is currently stable,Continue normal customer engagement
+C1003,72,68,-5.56,61,7600,HEALTHY,LOW,Customer engagement is currently stable,Continue normal customer engagement
+C1012,61,57,-6.56,52,5900,HEALTHY,LOW,Customer engagement is currently stable,Continue normal customer engagement
+C1018,58,55,-5.17,51,4800,HEALTHY,LOW,Customer engagement is currently stable,Continue normal customer engagement
+C1008,44,41,-6.82,49,3400,HEALTHY,LOW,Customer engagement is currently stable,Continue normal customer engagement
+C1020,40,43,7.5,64,3200,HEALTHY,LOW,Customer engagement is currently stable,Continue normal customer engagement
+C1014,35,31,-11.43,46,2700,HEALTHY,LOW,Customer engagement is currently stable,Continue normal customer engagement
+C1017,28,46,64.29,75,2300,HEALTHY,LOW,Customer engagement is currently stable,Continue normal customer engagement
+C1005,30,42,40.0,67,2100,HEALTHY,LOW,Customer engagement is currently stable,Continue normal customer engagement
+C1010,25,39,56.0,72,1800,HEALTHY,LOW,Customer engagement is currently stable,Continue normal customer engagement
